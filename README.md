@@ -1,48 +1,121 @@
-# Svelte + TS + Vite
+# Minimal Reproducible Example - vite-plugin-eslint vs. unplugin-icons
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+There is a clash when trying to use the vite-plugin-eslint package with unplugin-icons in a svelte-vite-typescript project.
 
-## Recommended IDE Setup
+This repo produces a Minimal Reproducible Example of the error.
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+Steps to create the repo:
 
-## Need an official Svelte framework?
+## Init the project 
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+Using the Vite Svelte Typescript Template:
+``` shell
+#+begin_src shell
+~/code
+❯ npm create vite@latest
+✔ Project name: … eslint-unplugin-mre
+✔ Select a framework: › svelte
+✔ Select a variant: › svelte-ts
 
-## Technical considerations
+Scaffolding project in /home/thomassdk/code/eslint-unplugin-mre...
 
-**Why use this over SvelteKit?**
+Done. Now run:
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
-  `vite dev` and `vite build` wouldn't work in a SvelteKit environment, for example.
+  cd eslint-unplugin-mre
+  npm install
+  npm run dev
+#+end_src
+```
 
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
+## Install unplugin-icons:
 
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
+``` shell
+eslint-unplugin-mre on  main [!?] via  v16.15.0
+❯ npm i -D unplugin-icons @iconify/json
 
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
+added 50 packages, and audited 51 packages in 12s
 
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
+15 packages are looking for funding
+  run `npm fund` for details
 
-**Why include `.vscode/extensions.json`?**
+found 0 vulnerabilities
+```
 
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
+Configure Vite:
+``` javascript
+// vite.config.js
+import { defineConfig } from 'vite'
+import { svelte } from '@sveltejs/vite-plugin-svelte'
+import Icons from 'unplugin-icons/vite'
 
-**Why enable `allowJs` in the TS template?**
+export default defineConfig({
+  plugins: [
+    svelte(),
+    Icons({
+      compiler: 'svelte',
+    }),
+  ],
+})
+```
 
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
+At this point the project works importing icons however after configuring eslint importing the icons breaks
 
-**Why is HMR not preserving my local component state?**
+## Installing Eslint
 
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
+``` shell
+eslint-unplugin-mre on  main [!] via  v16.15.0 took 3s
+❯ npm install eslint eslint-plugin-svelte3 @types/eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin vite-plugin-eslint --save-dev
 
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
+added 3 packages, and audited 185 packages in 1s
 
-```ts
-// store.ts
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
+34 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+```
+
+``` shell
+eslint-unplugin-mre on  main [!?] via  v16.15.0 took 14s
+❯ npx eslint --init
+You can also run this command directly using 'npm init @eslint/config'.
+✔ How would you like to use ESLint? · problems
+✔ What type of modules does your project use? · esm
+✔ Which framework does your project use? · none
+✔ Does your project use TypeScript? · No / Yes
+✔ Where does your code run? · browser
+✔ What format do you want your config file to be in? · JavaScript
+The config that you've selected requires the following dependencies:
+
+A config file was generated, but the config file itself may not follow your linting rules.
+Successfully created .eslintrc.cjs file in /home/thomassdk/code/eslint-unplugin-mre
+```
+
+After configuring eslint to be compatible with svelte and adding the vite-plugin-eslint to the Vite config the project now fails to import an icon from unplugin-icons with the error:
+``` shell
+eslint-unplugin-mre on  main [!?] via  v16.15.0 took 1m1s 130
+❯ npm run dev
+
+> eslint-unplugin-mre@0.0.0 dev
+> vite
+
+
+  vite v2.9.9 dev server running at:
+
+  > Local: http://localhost:3000/
+  > Network: use `--host` to expose
+
+  ready in 265ms.
+
+No files matching '~icons/carbon/accessibility.svelte' were found.
+10:04:37 PM [vite] Internal server error: No files matching '~icons/carbon/accessibility.svelte' were found.
+  Plugin: vite-plugin-eslint
+  File: ~icons/carbon/accessibility.svelte
+      at FileEnumerator.iterateFiles (/home/thomassdk/code/eslint-unplugin-mre/node_modules/eslint/lib/cli-engine/file-enumerator.js:318:27)
+      at iterateFiles.next (<anonymous>)
+      at CLIEngine.executeOnFiles (/home/thomassdk/code/eslint-unplugin-mre/node_modules/eslint/lib/cli-engine/cli-engine.js:788:48)
+      at ESLint.lintFiles (/home/thomassdk/code/eslint-unplugin-mre/node_modules/eslint/lib/eslint/eslint.js:550:23)
+      at TransformContext.transform (file:///home/thomassdk/code/eslint-unplugin-mre/node_modules/vite-plugin-eslint/dist/index.mjs:97:35)
+      at processTicksAndRejections (node:internal/process/task_queues:96:5)
+      at async Object.transform (/home/thomassdk/code/eslint-unplugin-mre/node_modules/vite/dist/node/chunks/dep-59dc6e00.js:38900:30)
+      at async doTransform (/home/thomassdk/code/eslint-unplugin-mre/node_modules/vite/dist/node/chunks/dep-59dc6e00.js:55857:29)
 ```
